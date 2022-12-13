@@ -4,17 +4,19 @@ def advent1():
     f.close()
 
 
-    largest_cal = 0
     current_sum = 0
+    elfs_cal_arr = []
     for _, value in enumerate(x):
 
         if not value:
-            largest_cal = max(largest_cal, current_sum)
+            elfs_cal_arr.append(current_sum)
             current_sum = 0
         else:
             current_sum += int(value)
 
 
-    print(largest_cal)
+    elfs_cal_arr.sort()
+    top_3_cal = elfs_cal_arr[-3:]
+    print(sum(top_3_cal))
 
 advent1()
