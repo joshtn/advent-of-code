@@ -1,22 +1,40 @@
-def advent1():
+def advent():
     f = open('../input.txt', 'r')
-    x = f.read().split("\n")
+    s = f.read()
     f.close()
 
+    shape = {'R': 1, 'P': 2, 'S': 3}
+    
+    win = {'R': 'S', 'P': 'R', 'S': 'P'}
 
-    current_sum = 0
-    elfs_cal_arr = []
-    for _, value in enumerate(x):
+    loose = {'R': 'P', 'P': 'S', 'S': 'R'}
 
-        if not value:
-            elfs_cal_arr.append(current_sum)
-            current_sum = 0
+    trans = {
+        'A': 'R', 'B': 'P', 'C': 'S',
+        'X': 'L', 'Y': 'D', 'Z': 'W',
+    }
+
+# x=loose y=draw z=win
+        
+    for k, v in trans.items():         
+        s = s.replace(k, v)
+
+    n = 0
+    for line in s.splitlines():
+        a, b = line.split()
+        if b == 'D':
+            n += 3
+            n += shape[a]
+        elif b == 'W':
+            n += 6
+            n += shape[loose[a]]
         else:
-            current_sum += int(value)
+            n += shape[win[a]]
+        
 
 
-    elfs_cal_arr.sort()
-    top_3_cal = elfs_cal_arr[-3:]
-    print(sum(top_3_cal))
+    print(n)
+    return n
 
-advent1()
+
+advent()
