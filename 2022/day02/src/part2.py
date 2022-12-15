@@ -7,14 +7,12 @@ def advent():
     
     win = {'R': 'S', 'P': 'R', 'S': 'P'}
 
-    loose = {'R': 'P', 'P': 'S', 'S': 'R'}
+    loose = {v: k for k, v in win.items()}
 
-    trans = {
-        'A': 'R', 'B': 'P', 'C': 'S',
-        'X': 'L', 'Y': 'D', 'Z': 'W',
-    }
+    trans = {'A': 'R', 'B': 'P', 'C': 'S'}
 
-# x=loose y=draw z=win
+
+    # x=loose y=draw z=win
         
     for k, v in trans.items():         
         s = s.replace(k, v)
@@ -22,12 +20,10 @@ def advent():
     n = 0
     for line in s.splitlines():
         a, b = line.split()
-        if b == 'D':
-            n += 3
-            n += shape[a]
-        elif b == 'W':
-            n += 6
-            n += shape[loose[a]]
+        if b == 'Y':
+            n += shape[a] + 3
+        elif b == 'Z':
+            n += shape[loose[a]] + 6
         else:
             n += shape[win[a]]
         
