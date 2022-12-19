@@ -8,31 +8,30 @@ INPUT_TXT = os.path.join(os.path.dirname(__file__), '../input.txt')
 
 
 def compute(s: str) -> int:
-    total = 0
+    count = 0
+    for line in s.splitlines():
+        ab, cd = line.split(',')
+        a_s, b_s = ab.split('-') 
+        c_s, d_s = cd.split('-')
+        a, b = int(a_s), int(b_s)
+        c, d = int(c_s), int(d_s)
 
-    items = iter(s.splitlines())
-    while True:
-        try:
-            s, = set(next(items)) & set(next(items)) & set(next(items))
-        except StopIteration:
-            break
-        else:
-            if s.islower():
-                total += 1 + (ord(s) - ord('a'))
-            else:
-                total += 27 + (ord(s) - ord('A'))
-    return total
+        if a <= c <= d <= b:
+            count += 1
+        elif c <= a <= b <= d:
+            count += 1
 
+    return count
 
 INPUT_S = '''\
-vJrwpWtwJgWrhcsFMMfFFhFp
-jqHRNqRjqzjGDLGLrsFMfFZSrLrFZsSL
-PmmdzqPrVvPwwTWBwg
-wMqvLMZHhHMvwLHjbvcjnnSBnvTQFn
-ttgJtRGJQctTZtZT
-CrZsJsPPZsGzwwsLwLmpwMDw
+2-4,6-8
+2-3,4-5
+5-7,7-9
+2-8,3-7
+6-6,4-6
+2-6,4-8
 '''
-EXPECTED = 70
+EXPECTED = 2
 
 
 @pytest.mark.parametrize(
