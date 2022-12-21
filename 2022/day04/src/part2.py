@@ -16,9 +16,11 @@ def compute(s: str) -> int:
         a, b = int(a_s), int(b_s)
         c, d = int(c_s), int(d_s)
 
-        if a <= c <= b:
-            count += 1
-        elif c <= a <= d:
+        set_ab = set(range(a, b+1))
+        set_cd = set(range(c, d+1))
+        overlap_set = set_ab.intersection(set_cd)
+
+        if overlap_set:
             count += 1
       
 
