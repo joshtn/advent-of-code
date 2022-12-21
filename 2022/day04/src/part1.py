@@ -10,16 +10,10 @@ INPUT_TXT = os.path.join(os.path.dirname(__file__), '../input.txt')
 def compute(s: str) -> int:
     count = 0
     for line in s.splitlines():
-        ab, cd = line.split(',')
-        a_s, b_s = ab.split('-') 
-        c_s, d_s = cd.split('-')
-        a, b = int(a_s), int(b_s)
-        c, d = int(c_s), int(d_s)
+        a, b, c ,d = map(int, line.replace(',', '-').split('-'))
+        if a <= c and b >= d or c <= a and b <= d:
+            count += 1
 
-        if a <= c <= d <= b:
-            count += 1
-        elif c <= a <= b <= d:
-            count += 1
 
     return count
 
