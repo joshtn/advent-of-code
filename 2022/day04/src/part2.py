@@ -10,19 +10,10 @@ INPUT_TXT = os.path.join(os.path.dirname(__file__), '../input.txt')
 def compute(s: str) -> int:
     count = 0
     for line in s.splitlines():
-        ab, cd = line.split(',')
-        a_s, b_s = ab.split('-') 
-        c_s, d_s = cd.split('-')
-        a, b = int(a_s), int(b_s)
-        c, d = int(c_s), int(d_s)
-
-        set_ab = set(range(a, b+1))
-        set_cd = set(range(c, d+1))
-        overlap_set = set_ab.intersection(set_cd)
-
-        if overlap_set:
+        a, b, c, d = map(int, line.replace(',', '-').split('-'))
+        if set(range(a, b+1)) & set(range(c, d+1)):
             count += 1
-      
+     
 
     return count
 
