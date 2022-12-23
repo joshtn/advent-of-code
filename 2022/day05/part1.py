@@ -3,29 +3,73 @@ import os.path
 
 import pytest
 
+####
+
+
 
 INPUT_TXT = os.path.join(os.path.dirname(__file__), 'input.txt')
 
+# use 3 lists and pop and append?
+# lots of insert and delete operations
+# unpack letters in brackets
+# regex for seperating str from ints
+# seperate input first by the blank line
+# for crates do unpack using [1::4]
 
-def compute(s: str) -> int:
-    count = 0
-    for line in s.splitlines():
-        a, b, c ,d = map(int, line.replace(',', '-').split('-'))
-        if a <= c and b >= d or c <= a and b <= d:
-            count += 1
+# update
+# get moves/instruction data to be "triplets"
 
 
-    return count
+def compute(s: str) -> str:
+    state = [
+        'FHMTVLD',
+        'PNTCJGQH',
+        'HPMDSR',
+        'FVBL',
+        'QLGHN',
+        'PMRGDBW',
+        'QLHCRNMG',
+        'WLC',
+        'TMZJQLDR',
+    ]
+
+    instructions = [
+        'move 1 from 2 to 1',
+        'move 3 from 1 to 3',
+        'move 2 from 2 to 1',
+        'move 1 from 1 to 2',
+    ]
+
+    ans = ""
+
+
+
+    return ans
+
+"""
+    [P]                 [Q]     [T]
+[F] [N]             [P] [L]     [M]
+[H] [T] [H]         [M] [H]     [Z]
+[M] [C] [P]     [Q] [R] [C]     [J]
+[T] [J] [M] [F] [L] [G] [R]     [Q]
+[V] [G] [D] [V] [G] [D] [N] [W] [L]
+[L] [Q] [S] [B] [H] [B] [M] [L] [D]
+[D] [H] [R] [L] [N] [W] [G] [C] [R]
+ 1   2   3   4   5   6   7   8   9 
+"""
 
 INPUT_S = '''\
-2-4,6-8
-2-3,4-5
-5-7,7-9
-2-8,3-7
-6-6,4-6
-2-6,4-8
+    [D]    
+[N] [C]    
+[Z] [M] [P]
+ 1   2   3 
+
+move 1 from 2 to 1
+move 3 from 1 to 3
+move 2 from 2 to 1
+move 1 from 1 to 2
 '''
-EXPECTED = 2
+EXPECTED = "CMZ"
 
 
 @pytest.mark.parametrize(
@@ -44,7 +88,7 @@ def main() -> int:
     args = parser.parse_args()
 
     with open(args.data_file) as f:
-        print(compute(f.read()))
+        print(compute(f.read().strip()))
 
     return 0
 
