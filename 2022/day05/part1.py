@@ -21,27 +21,41 @@ INPUT_TXT = os.path.join(os.path.dirname(__file__), 'input.txt')
 
 
 def compute(s: str) -> str:
-    state = [
-        'FHMTVLD',
-        'PNTCJGQH',
-        'HPMDSR',
-        'FVBL',
-        'QLGHN',
-        'PMRGDBW',
-        'QLHCRNMG',
-        'WLC',
-        'TMZJQLDR',
-    ]
-
-    instructions = [
-        'move 1 from 2 to 1',
-        'move 3 from 1 to 3',
-        'move 2 from 2 to 1',
-        'move 1 from 1 to 2',
-    ]
-
     ans = ""
+    N = 9
+    drawing_lines = 8
 
+    data, moves = s.split("\n\n")
+    print(data)
+    drawing = data.split("\n")
+    stacks = [[] for _ in range(N)]
+
+    for i in range(drawing_lines):
+        line = drawing[i]
+        crates = line[1::4]
+        for s in range(len(crates)):
+            if crates[s] != " ":
+                stacks[s].append(crates[s])
+
+    # reverse all stacks
+    stacks = [stack[::-1] for stack in stacks]
+
+
+    for line in moves.split("\n"):
+        tokens = line.split(" ")
+        if tokens[-1] == "": # handles last list that is empty and no move in it
+            break
+        n, src, dst = map(int, [tokens[1], tokens[3], tokens[5]])
+        src -= 1
+        dst -= 1
+
+        for _ in range(n):
+            pop = stacks[src].pop()
+            stacks[dst].append(pop)
+
+
+    tops = [stack[-1] for stack in stacks]
+    ans = "".join(tops)
 
 
     return ans
@@ -78,7 +92,7 @@ EXPECTED = "CMZ"
         (INPUT_S, EXPECTED),
     ),
 )
-def test(input_s: str, expected: int) -> None:
+def test(input_s: str, expected: str) -> None:
     assert compute(input_s) == expected
 
 
@@ -88,7 +102,7 @@ def main() -> int:
     args = parser.parse_args()
 
     with open(args.data_file) as f:
-        print(compute(f.read().strip()))
+        print(compute(f.read()))
 
     return 0
 
