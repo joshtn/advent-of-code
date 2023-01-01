@@ -26,10 +26,14 @@ def compute(s: str) -> int:
     for block in blocks:
         parse(block)
 
-    ans = 0
+    unused = 70000000 - dfs("/")
+    required = 30000000 - unused
+
+    ans = 1 << 60
     for abspath in dir_sizes:
-        if dfs(abspath) <= 100000:
-            ans += dfs(abspath)
+        size = dfs(abspath)
+        if size >= required:
+            ans = min(ans, size)
             
 
     return ans
