@@ -1,112 +1,61 @@
 import argparse
-from functools import lru_cache
 import os.path
 
 import pytest
 
 ####
-from collections import defaultdict
 
 
 
 INPUT_TXT = os.path.join(os.path.dirname(__file__), 'input.txt')
 
-# keep track of dirname
-# scan each line for number part  then add the number part to a total var.
-# until u reach a line that has dir or shifted to left..
-
-path = []
-dir_sizes = defaultdict(int) #defaultdict can manipulate when nothing is inside
-children = defaultdict(list)
-
+# scenic view score, mult each tree seen for each dir and return highest among all trees.
 
 def compute(s: str) -> int:
-    blocks = ("\n" + s.strip()).split("\n$ ")[1:]
 
-    for block in blocks:
-        parse(block)
+    grid = [list(map(int, line)) for line in s.splitlines()]
 
-    unused = 70000000 - dfs("/")
-    required = 30000000 - unused
+    t = 0
 
-    ans = 1 << 60
-    for abspath in dir_sizes:
-        size = dfs(abspath)
-        if size >= required:
-            ans = min(ans, size)
+    for r in range(len(grid)):
+        for c in range(len(grid[r])):
+            k = grid[r][c]
+            L = R = U = D = 0
+            for x in range(c - 1, -1, -1):
+                L += 1
+                if grid[r][x] >= k:
+                    break
+            for x in range(c + 1, len(grid)):
+                R += 1
+                if grid[r][x] >= k:
+                    break
+            for x in range(r - 1, -1, -1):
+                U += 1
+                if grid[x][c] >= k:
+                    break
+            for x in range(r + 1, len(grid)):
+                D += 1
+                if grid[x][c] >= k:
+                    break
+
+            t = max(t, L * R * U * D)
+
             
-
-    return ans
-
+    return t
 
 
-
-def parse(block):
-    
-    lines = block.split("\n")
-    command = lines[0]
-    outputs = lines[1:]
-
-    parts = command.split(" ")
-    op = parts[0]
-    if op == "cd":
-        if parts[1] == "..":
-            path.pop()
-        else:
-            path.append(parts[1])
-
-        return
-
-    abspath = "/".join(path)
-    assert op == "ls"
-
-    sizes = []
-    for line in outputs:
-        if not line.startswith("dir"):
-            sizes.append(int(line.split(" ")[0]))
-        else:
-            dir_name = line.split(" ")[1]
-            children[abspath].append(f"{abspath}/{dir_name}")
-
-    dir_sizes[abspath] = sum(sizes)
-
-
-@lru_cache(None)
-def dfs(abspath):
-    size = dir_sizes[abspath]
-    for child in children[abspath]:
-        size += dfs(child)
-    return size
 
 
 
 
 INPUT_S = '''\
-$ cd /
-$ ls
-dir a
-14848514 b.txt
-8504156 c.dat
-dir d
-$ cd a
-$ ls
-dir e
-29116 f
-2557 g
-62596 h.lst
-$ cd e
-$ ls
-584 i
-$ cd ..
-$ cd ..
-$ cd d
-$ ls
-4060174 j
-8033020 d.log
-5626152 d.ext
-7214296 k
+30373
+25512
+65332
+33549
+35390
 '''
-EXPECTED = 95437
+EXPECTED = 21
 
 
 @pytest.mark.parametrize(
