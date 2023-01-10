@@ -9,39 +9,63 @@ import pytest
 
 INPUT_TXT = os.path.join(os.path.dirname(__file__), 'input.txt')
 
-# scenic view score, mult each tree seen for each dir and return highest among all trees.
+
+knots = [[0, 0] for _ in range(10)]
+
 
 def compute(s: str) -> int:
+    lines = s.strip().split("\n")
 
-    grid = [list(map(int, line)) for line in s.splitlines()]
 
-    t = 0
+    def touching(x1, y1, x2, y2):
+        return abs(x1 - x2) <= 1 and abs(y1 - y2) <= 1
 
-    for r in range(len(grid)):
-        for c in range(len(grid[r])):
-            k = grid[r][c]
-            L = R = U = D = 0
-            for x in range(c - 1, -1, -1):
-                L += 1
-                if grid[r][x] >= k:
-                    break
-            for x in range(c + 1, len(grid)):
-                R += 1
-                if grid[r][x] >= k:
-                    break
-            for x in range(r - 1, -1, -1):
-                U += 1
-                if grid[x][c] >= k:
-                    break
-            for x in range(r + 1, len(grid)):
-                D += 1
-                if grid[x][c] >= k:
-                    break
 
-            t = max(t, L * R * U * D)
+    def move(dx, dy):
+        global knots
+
+        knots[0][0] += dx 
+        knots[0][1] += dy 
+
+
+        for i in range(1, 10):
+            hx, hy = knots[i - 1]
+            tx, ty = knots[i]
+
+            if not touching(hx, hy, tx, ty):
+                sign_x = 0 if hx == tx else (hx - tx) / abs(hx - tx)
+                sign_y = 0 if hy == ty else (hy - ty) / abs(hy - ty)
+
+                tx += sign_x
+                ty += sign_y
+
+            knots[i] = [tx, ty]
+
+
+    dd = {
+        "R": [1, 0],
+        "U": [0, 1],
+        "L": [-1, 0],
+        "D": [0, -1]
+    }
+
+
+    tail_visited = set()
+    tail_visited.add(tuple(knots[-1]))
+
+
+    for line in lines:
+        op, amount = line.split(" ")
+        amount = int(amount)
+        dx, dy = dd[op]
+
+        for _ in range(amount):
+            move(dx, dy)
+            tail_visited.add(tuple(knots[-1]))
+
 
             
-    return t
+    return len(tail_visited)
 
 
 
@@ -49,13 +73,16 @@ def compute(s: str) -> int:
 
 
 INPUT_S = '''\
-30373
-25512
-65332
-33549
-35390
+R 4
+U 4
+L 3
+D 1
+R 4
+D 1
+L 5
+R 2
 '''
-EXPECTED = 21
+EXPECTED = 13
 
 
 @pytest.mark.parametrize(
