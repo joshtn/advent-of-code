@@ -9,63 +9,58 @@ import pytest
 
 INPUT_TXT = os.path.join(os.path.dirname(__file__), 'input.txt')
 
+# count to act as timer, condition for the important  20th 60th + 40 each time 
+# input is simple to work with.
+# consider that instructions that different cycles to complete.
+# save values into stack and pop at right cycle count, no need
 
-knots = [[0, 0] for _ in range(10)]
 
 
 def compute(s: str) -> int:
     lines = s.strip().split("\n")
 
+    cur_X = 1
+    op = 0
+    ans = 0
 
-    def touching(x1, y1, x2, y2):
-        return abs(x1 - x2) <= 1 and abs(y1 - y2) <= 1
+    row = 0
+    col = 0
 
-
-    def move(dx, dy):
-        global knots
-
-        knots[0][0] += dx 
-        knots[0][1] += dy 
-
-
-        for i in range(1, 10):
-            hx, hy = knots[i - 1]
-            tx, ty = knots[i]
-
-            if not touching(hx, hy, tx, ty):
-                sign_x = 0 if hx == tx else (hx - tx) / abs(hx - tx)
-                sign_y = 0 if hy == ty else (hy - ty) / abs(hy - ty)
-
-                tx += sign_x
-                ty += sign_y
-
-            knots[i] = [tx, ty]
-
-
-    dd = {
-        "R": [1, 0],
-        "U": [0, 1],
-        "L": [-1, 0],
-        "D": [0, -1]
-    }
-
-
-    tail_visited = set()
-    tail_visited.add(tuple(knots[-1]))
+    X = [1] * 241
 
 
     for line in lines:
-        op, amount = line.split(" ")
-        amount = int(amount)
-        dx, dy = dd[op]
+        parts = line.split(" ")
 
-        for _ in range(amount):
-            move(dx, dy)
-            tail_visited.add(tuple(knots[-1]))
+        if parts[0] == "noop":
+            op += 1 
+            X[op] = cur_X
 
 
-            
-    return len(tail_visited)
+        elif parts[0] == "addx":
+            V = int(parts[1])
+
+            X[op + 1] = cur_X
+            cur_X += V
+
+            op += 2
+            X[op] = cur_X
+
+    # Ranges from [1, 39]
+    ans = [[None] * 40 for _ in range(6)]
+
+    for row in range(6):
+        for col in range(40):
+            counter = row * 40 + col + 1
+            if abs(X[counter - 1] - (col)) <= 1:
+                ans[row][col] = "##"
+            else:
+                ans[row][col] = "  "
+
+    for row in ans:
+        print("".join(row))
+
+    return 0
 
 
 
@@ -73,16 +68,11 @@ def compute(s: str) -> int:
 
 
 INPUT_S = '''\
-R 4
-U 4
-L 3
-D 1
-R 4
-D 1
-L 5
-R 2
+noop
+addx 3
+addx -5
 '''
-EXPECTED = 13
+EXPECTED = -1
 
 
 @pytest.mark.parametrize(
