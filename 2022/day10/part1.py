@@ -19,36 +19,22 @@ INPUT_TXT = os.path.join(os.path.dirname(__file__), 'input.txt')
 def compute(s: str) -> int:
     lines = s.strip().split("\n")
 
-    X = 1
-    op = 0
+    x = 1
 
-    ans = 0
-    interesting = [20, 60, 100, 140, 180, 220]
+    o = [0] # padding with 0 so index can start at 1
 
     for line in lines:
-        parts = line.split(" ")
+        if line == "noop":
+            o.append(x)
+        else:
+            v = int(line.split()[1])
+            o.append(x)
+            o.append(x)
+            x += v
 
-        if parts[0] == "noop":
-            op += 1
+    o.append(x)
 
-            if op in interesting:
-                ans += op * X
-
-        elif parts[0] == "addx":
-            V = int(parts[1])
-            X += V
-
-            op += 1
-
-            if op in interesting:
-                ans += op * (X - V)
-
-            op += 1
-
-            if op in interesting:
-                ans += op * (X - V)
-
-    return ans
+    return sum(x * y for x, y in list(enumerate(o))[20::40])
 
 
 
