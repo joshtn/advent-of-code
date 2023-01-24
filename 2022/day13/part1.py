@@ -10,48 +10,35 @@ from collections import deque
 
 INPUT_TXT = os.path.join(os.path.dirname(__file__), 'input.txt')
 
-# a - z with a lowest. 
-# S is Currpos. 
-# E is best signal. Get to E in few steps. 
-# bfs graph, using q
 
 def compute(s: str) -> int:
 
-    grid = [list(x) for x in s.strip().splitlines()]
+    x = list(map(str.splitlines, s.strip().split("\n\n")))
 
-    for r, row in enumerate(grid):
-        for c, item in enumerate(row):
-            if item == "S":
-                sr = r
-                sc = c
-                grid[r][c] = "a"
-            if item == "E":
-                er = r
-                ec = c
-                grid[r][c] = "z"
+    def f(x, y):
+        if type(x) == int:
+            if type(y) == int:
+                return x - y
+            else:
+                return f([x], y)
+        else:
+            if type(y) == int:
+                return f(x, [y])
 
-    q = deque()
-    q.append((0, sr, sc))
+        for a, b in zip(x, y):
+            v = f(a, b)
+            if v:
+                return v
 
-    vis = {(sr, sc)}
+        return len(x) - len(y)
 
-    while q:
-        d, r, c = q.popleft()
-        for nr, nc in [(r + 1, c), (r - 1, c), (r, c + 1), (r, c - 1)]:
-            if nr < 0 or nc < 0 or nr >= len(grid) or nc >= len(grid[0]):
-                continue
-            if (nr, nc) in vis:
-                continue
-            if ord(grid[nr][nc]) - ord(grid[r][c]) > 1:
-                continue
-            if nr == er and nc == ec:
-                return d + 1
+    t = 0
 
-            vis.add((nr, nc))
-            q.append((d + 1, nr, nc))
+    for i, (a, b) in enumerate(x):
+        if f(eval(a), eval(b)) < 0:
+            t += i + 1
 
-
-    return 0
+    return t
 
 
 
@@ -59,13 +46,31 @@ def compute(s: str) -> int:
 
 
 INPUT_S = '''\
-Sabqponm
-abcryxxl
-accszExk
-acctuvwj
-abdefghi
+[1,1,3,1,1]
+[1,1,5,1,1]
+
+[[1],[2,3,4]]
+[[1],4]
+
+[9]
+[[8,7,6]]
+
+[[4,4],4,4]
+[[4,4],4,4,4]
+
+[7,7,7,7]
+[7,7,7]
+
+[]
+[3]
+
+[[[]]]
+[[]]
+
+[1,[2,[3,[4,[5,6,7]]]],8,9]
+[1,[2,[3,[4,[5,6,0]]]],8,9]
 '''
-EXPECTED = 31
+EXPECTED = 13
 
 
 @pytest.mark.parametrize(
