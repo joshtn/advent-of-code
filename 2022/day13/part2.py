@@ -4,50 +4,46 @@ import os.path
 import pytest
 
 ####
-from collections import deque
 
 
 
 INPUT_TXT = os.path.join(os.path.dirname(__file__), 'input.txt')
 
-# bfs graph, using q
-# fewest steps for any elevation "a"
 
 def compute(s: str) -> int:
 
-    grid = [list(x) for x in s.strip().splitlines()]
 
-    for r, row in enumerate(grid):
-        for c, item in enumerate(row):
-            if item == "S":
-                grid[r][c] = "a"
-            if item == "E":
-                er = r
-                ec = c
-                grid[r][c] = "z"
+    def f(x, y):
+        if type(x) == int:
+            if type(y) == int:
+                return x - y
+            else:
+                return f([x], y)
+        else:
+            if type(y) == int:
+                return f(x, [y])
 
-    q = deque()
-    q.append((0, er, ec))
+        for a, b in zip(x, y):
+            v = f(a, b)
+            if v:
+                return v
 
-    vis = {(er, ec)}
-
-    while q:
-        d, r, c = q.popleft()
-        for nr, nc in [(r + 1, c), (r - 1, c), (r, c + 1), (r, c - 1)]:
-            if nr < 0 or nc < 0 or nr >= len(grid) or nc >= len(grid[0]):
-                continue
-            if (nr, nc) in vis:
-                continue
-            if ord(grid[nr][nc]) - ord(grid[r][c]) < -1:
-                continue
-            if grid[nr][nc] == "a":
-                return d + 1
-
-            vis.add((nr, nc))
-            q.append((d + 1, nr, nc))
+        return len(x) - len(y)
 
 
-    return 0
+    x = list(map(eval, s.split()))
+
+    i2 = 1
+    i6 = 2
+
+    for a in x:
+        if f(a, [[2]]) < 0:
+            i2 += 1
+            i6 += 1
+        elif f(a, [[6]]) < 0:
+            i6 +=1
+
+    return  i2 * i6
 
 
 
@@ -55,13 +51,31 @@ def compute(s: str) -> int:
 
 
 INPUT_S = '''\
-Sabqponm
-abcryxxl
-accszExk
-acctuvwj
-abdefghi
+[1,1,3,1,1]
+[1,1,5,1,1]
+
+[[1],[2,3,4]]
+[[1],4]
+
+[9]
+[[8,7,6]]
+
+[[4,4],4,4]
+[[4,4],4,4,4]
+
+[7,7,7,7]
+[7,7,7]
+
+[]
+[3]
+
+[[[]]]
+[[]]
+
+[1,[2,[3,[4,[5,6,7]]]],8,9]
+[1,[2,[3,[4,[5,6,0]]]],8,9]
 '''
-EXPECTED = 31
+EXPECTED = 13
 
 
 @pytest.mark.parametrize(
