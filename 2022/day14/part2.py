@@ -12,38 +12,53 @@ INPUT_TXT = os.path.join(os.path.dirname(__file__), 'input.txt')
 
 def compute(s: str) -> int:
 
+    blocked = set()
+    abyss = 0
 
-    def f(x, y):
-        if type(x) == int:
-            if type(y) == int:
-                return x - y
-            else:
-                return f([x], y)
-        else:
-            if type(y) == int:
-                return f(x, [y])
+    
+    lines = s.strip().split("\n")
 
-        for a, b in zip(x, y):
-            v = f(a, b)
-            if v:
-                return v
+    # for line in lines:
+    #     coords = []
 
-        return len(x) - len(y)
+    #     for str_coord in line.split(" -> "):
+    #         x, y = map(int, str_coord.split(","))
+    #         coords.append((x, y))
 
+    #     print(coords)
+    for line in lines:
+        x = [list(map(int, p.split(","))) for p in line.split(" -> ")]
+        for (x1, y1), (x2, y2) in zip(x, x[1:]):
+            x1, x2 = sorted([x1, x2])
+            y1, y2 = sorted([y1, y2])
+            for x in range(x1, x2 + 1):
+                for y in range(y1, y2 + 1):
+                    blocked.add(x + y * 1j)
+                    abyss = max(abyss, y + 1)
 
-    x = list(map(eval, s.split()))
+    t = 0
 
-    i2 = 1
-    i6 = 2
+    while 500 not in blocked:
+        s = 500
+        while True:
+            if s.imag >= abyss:
+                break
+            if s + 1j not in blocked:
+                s += 1j
+                continue
+            if s + 1j - 1 not in blocked:
+                s += 1j - 1
+                continue
+            if s + 1j + 1 not in blocked:
+                s += 1j + 1
+                continue
+            break
+        blocked.add(s)
+        t += 1
 
-    for a in x:
-        if f(a, [[2]]) < 0:
-            i2 += 1
-            i6 += 1
-        elif f(a, [[6]]) < 0:
-            i6 +=1
+    print(t)
 
-    return  i2 * i6
+    return 0
 
 
 
@@ -51,31 +66,10 @@ def compute(s: str) -> int:
 
 
 INPUT_S = '''\
-[1,1,3,1,1]
-[1,1,5,1,1]
-
-[[1],[2,3,4]]
-[[1],4]
-
-[9]
-[[8,7,6]]
-
-[[4,4],4,4]
-[[4,4],4,4,4]
-
-[7,7,7,7]
-[7,7,7]
-
-[]
-[3]
-
-[[[]]]
-[[]]
-
-[1,[2,[3,[4,[5,6,7]]]],8,9]
-[1,[2,[3,[4,[5,6,0]]]],8,9]
+498,4 -> 498,6 -> 496,6
+503,4 -> 502,4 -> 502,9 -> 494,9
 '''
-EXPECTED = 13
+EXPECTED = 24
 
 
 @pytest.mark.parametrize(
