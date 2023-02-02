@@ -18,6 +18,8 @@ def compute(s: str) -> int:
 
     Y = 2000000
 
+    intervals = []
+
     for line in s.splitlines():
         sx, sy, bx, by = map(int, pattern.findall(line))
 
@@ -30,11 +32,34 @@ def compute(s: str) -> int:
         lx = sx - o
         hx = sx + o
 
-        for x in range(lx, hx + 1):
-            cannot.add(x)
+        intervals.append((lx, hx))
 
         if by == Y:
             known.add(bx)
+
+    intervals.sort()
+
+    q = []
+
+    for lo, hi in intervals:
+        if not q:
+            q.append([lo, hi])
+            continue
+
+        qlo, qhi = q[-1]
+
+        if lo > qhi + 1:
+            q.append([lo, hi])
+            continue
+
+        q[-1][1] = max(qhi, hi)
+
+    cannot = set()
+
+    for lo, hi in q:
+        for x in range(lo, hi + 1):
+            cannot.add(x)
+
 
     return len(cannot - known)
 
