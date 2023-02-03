@@ -4,59 +4,63 @@ import os.path
 import pytest
 
 ####
-
+import re
 
 
 INPUT_TXT = os.path.join(os.path.dirname(__file__), 'input.txt')
 
 
 def compute(s: str) -> int:
+    pattern = re.compile(r"-?\d+")
 
-    blocked = set()
-    abyss = 0
+    lines = [list(map(int, pattern.findall(line))) for line in s.splitlines()]
 
-    
-    lines = s.strip().split("\n")
+    M = 4000000
 
-    # for line in lines:
-    #     coords = []
+    for Y in range(M + 1):
 
-    #     for str_coord in line.split(" -> "):
-    #         x, y = map(int, str_coord.split(","))
-    #         coords.append((x, y))
+        intervals = []
 
-    #     print(coords)
-    for line in lines:
-        x = [list(map(int, p.split(","))) for p in line.split(" -> ")]
-        for (x1, y1), (x2, y2) in zip(x, x[1:]):
-            x1, x2 = sorted([x1, x2])
-            y1, y2 = sorted([y1, y2])
-            for x in range(x1, x2 + 1):
-                for y in range(y1, y2 + 1):
-                    blocked.add(x + y * 1j)
-                    abyss = max(abyss, y + 1)
+        for sx, sy, bx, by in lines:
 
-    t = 0
+            d = abs(sx - bx) + abs(sy - by)
+            o = d - abs(sy - Y)
 
-    while 500 not in blocked:
-        s = 500
-        while True:
-            if s.imag >= abyss:
+            if o < 0:
+                continue
+
+            lx = sx - o
+            hx = sx + o
+
+            intervals.append((lx, hx))
+
+
+        intervals.sort()
+
+        q = []
+
+        for lo, hi in intervals:
+            if not q:
+                q.append([lo, hi])
+                continue
+
+            qlo, qhi = q[-1]
+
+            if lo > qhi + 1:
+                q.append([lo, hi])
+                continue
+
+            q[-1][1] = max(qhi, hi)
+
+        x = 0
+        for lo, hi in q:
+            if x < lo:
+                print(x * 4000000 + Y)
+                exit(0)
+            x = max(x, hi + 1)
+            if x > M:
                 break
-            if s + 1j not in blocked:
-                s += 1j
-                continue
-            if s + 1j - 1 not in blocked:
-                s += 1j - 1
-                continue
-            if s + 1j + 1 not in blocked:
-                s += 1j + 1
-                continue
-            break
-        blocked.add(s)
-        t += 1
 
-    print(t)
 
     return 0
 
@@ -66,10 +70,22 @@ def compute(s: str) -> int:
 
 
 INPUT_S = '''\
-498,4 -> 498,6 -> 496,6
-503,4 -> 502,4 -> 502,9 -> 494,9
+Sensor at x=2, y=18: closest beacon is at x=-2, y=15
+Sensor at x=9, y=16: closest beacon is at x=10, y=16
+Sensor at x=13, y=2: closest beacon is at x=15, y=3
+Sensor at x=12, y=14: closest beacon is at x=10, y=16
+Sensor at x=10, y=20: closest beacon is at x=10, y=16
+Sensor at x=14, y=17: closest beacon is at x=10, y=16
+Sensor at x=8, y=7: closest beacon is at x=2, y=10
+Sensor at x=2, y=0: closest beacon is at x=2, y=10
+Sensor at x=0, y=11: closest beacon is at x=2, y=10
+Sensor at x=20, y=14: closest beacon is at x=25, y=17
+Sensor at x=17, y=20: closest beacon is at x=21, y=22
+Sensor at x=16, y=7: closest beacon is at x=15, y=3
+Sensor at x=14, y=3: closest beacon is at x=15, y=3
+Sensor at x=20, y=1: closest beacon is at x=15, y=3
 '''
-EXPECTED = 24
+EXPECTED = 26
 
 
 @pytest.mark.parametrize(
