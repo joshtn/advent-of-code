@@ -4,65 +4,88 @@ import os.path
 import pytest
 
 ####
-import re
+from collections import deque
 
 
 INPUT_TXT = os.path.join(os.path.dirname(__file__), 'input.txt')
 
 
 def compute(s: str) -> int:
-    pattern = re.compile(r"-?\d+")
+    valves = {}
+    tunnels = {}
 
-    lines = [list(map(int, pattern.findall(line))) for line in s.splitlines()]
 
-    M = 4000000
+    for line in s.splitlines():
+        line = line.strip()
+        valve = line.split()[1]
+        flow = int(line.split(";")[0].split("=")[1])
+        targets = line.split("to ")[1].split(" ", 1)[1].split(", ")
+        valves[valve] = flow
+        tunnels[valve] = targets
 
-    for Y in range(M + 1):
+    dists = {}
+    nonempty = []
 
-        intervals = []
+    for valve in valves:
+        if valve != "AA" and not valves[valve]:
+            continue
 
-        for sx, sy, bx, by in lines:
+        if valve != "AA":
+            nonempty.append(valve)
 
-            d = abs(sx - bx) + abs(sy - by)
-            o = d - abs(sy - Y)
+        dists[valve] = {valve: 0, "AA": 0}
+        visited = {valve}
 
-            if o < 0:
+        queue = deque([(0, valve)])
+
+        while queue:
+            distance, position = queue.popleft()
+            for neighbor in tunnels[position]:
+                if neighbor in visited:
+                    continue
+                visited.add(neighbor)
+                if valves[neighbor]:
+                    dists[valve][neighbor] = distance + 1
+                queue.append((distance + 1, neighbor))
+
+        del dists[valve][valve]
+        if valve != "AA":
+            del dists[valve]["AA"]
+
+    indices = {}
+
+    for index, elements in enumerate(nonempty):
+        indices[elements] = index
+
+    cache = {}
+
+    def dfs(time, valve, bitmask):
+        if (time, valve, bitmask) in cache:
+            return cache[(time, valve, bitmask)]
+
+        maxval = 0
+        for neighbor in dists[valve]:
+            bit = 1 << indices[neighbor]
+            if bitmask & bit:
                 continue
-
-            lx = sx - o
-            hx = sx + o
-
-            intervals.append((lx, hx))
-
-
-        intervals.sort()
-
-        q = []
-
-        for lo, hi in intervals:
-            if not q:
-                q.append([lo, hi])
+            remtime = time - dists[valve][neighbor] - 1
+            if remtime <= 0:
                 continue
+            maxval = max(maxval, dfs(remtime, neighbor, bitmask | bit) + valves[neighbor] * remtime)
 
-            qlo, qhi = q[-1]
+        cache[(time, valve, bitmask)] = maxval
 
-            if lo > qhi + 1:
-                q.append([lo, hi])
-                continue
+        return maxval
 
-            q[-1][1] = max(qhi, hi)
+    b = (1 << len(nonempty)) -1
 
-        x = 0
-        for lo, hi in q:
-            if x < lo:
-                print(x * 4000000 + Y)
-                exit(0)
-            x = max(x, hi + 1)
-            if x > M:
-                break
+    m = 0
+
+    for i in range((b + 1) // 2):
+        m = max(m, dfs(26, "AA", i) + dfs(26, "AA", b ^ i))
 
 
-    return 0
+    return m
 
 
 
@@ -70,22 +93,18 @@ def compute(s: str) -> int:
 
 
 INPUT_S = '''\
-Sensor at x=2, y=18: closest beacon is at x=-2, y=15
-Sensor at x=9, y=16: closest beacon is at x=10, y=16
-Sensor at x=13, y=2: closest beacon is at x=15, y=3
-Sensor at x=12, y=14: closest beacon is at x=10, y=16
-Sensor at x=10, y=20: closest beacon is at x=10, y=16
-Sensor at x=14, y=17: closest beacon is at x=10, y=16
-Sensor at x=8, y=7: closest beacon is at x=2, y=10
-Sensor at x=2, y=0: closest beacon is at x=2, y=10
-Sensor at x=0, y=11: closest beacon is at x=2, y=10
-Sensor at x=20, y=14: closest beacon is at x=25, y=17
-Sensor at x=17, y=20: closest beacon is at x=21, y=22
-Sensor at x=16, y=7: closest beacon is at x=15, y=3
-Sensor at x=14, y=3: closest beacon is at x=15, y=3
-Sensor at x=20, y=1: closest beacon is at x=15, y=3
+Valve AA has flow rate=0; tunnels lead to valves DD, II, BB
+Valve BB has flow rate=13; tunnels lead to valves CC, AA
+Valve CC has flow rate=2; tunnels lead to valves DD, BB
+Valve DD has flow rate=20; tunnels lead to valves CC, AA, EE
+Valve EE has flow rate=3; tunnels lead to valves FF, DD
+Valve FF has flow rate=0; tunnels lead to valves EE, GG
+Valve GG has flow rate=0; tunnels lead to valves FF, HH
+Valve HH has flow rate=22; tunnel leads to valve GG
+Valve II has flow rate=0; tunnels lead to valves AA, JJ
+Valve JJ has flow rate=21; tunnel leads to valve II
 '''
-EXPECTED = 26
+EXPECTED = 1651
 
 
 @pytest.mark.parametrize(
