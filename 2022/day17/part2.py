@@ -4,88 +4,72 @@ import os.path
 import pytest
 
 ####
-from collections import deque
 
 
 INPUT_TXT = os.path.join(os.path.dirname(__file__), 'input.txt')
 
 
 def compute(s: str) -> int:
-    valves = {}
-    tunnels = {}
+    rocks = [
+        [0, 1, 2, 3],
+        [1, 1j, 1 + 1j, 2 + 1j, 1 + 2j],
+        [0, 1, 2, 2 + 1j, 2 + 2j],
+        [0, 1j, 2j, 3j],
+        [0, 1, 1j, 1 + 1j]
+    ]
 
+    jets = [1 if x == ">" else -1 for x in s.strip()]
+    solid = {x - 1j for x in range(7)}
+    height = 0
 
-    for line in s.splitlines():
-        line = line.strip()
-        valve = line.split()[1]
-        flow = int(line.split(";")[0].split("=")[1])
-        targets = line.split("to ")[1].split(" ", 1)[1].split(", ")
-        valves[valve] = flow
-        tunnels[valve] = targets
+    seen = {}
 
-    dists = {}
-    nonempty = []
+    def summarize():
+        o = [-20] * 7
 
-    for valve in valves:
-        if valve != "AA" and not valves[valve]:
-            continue
+        for x in solid:
+            r = int(x.real)
+            i = int(x.imag)
+            o[r] = max(o[r], i)
 
-        if valve != "AA":
-            nonempty.append(valve)
+        top = max(o)
+        return tuple(x - top for x in o)
 
-        dists[valve] = {valve: 0, "AA": 0}
-        visited = {valve}
+    rc = 0
 
-        queue = deque([(0, valve)])
+    ri = 0
+    rock = {x + 2 + (height + 3) * 1j for x in rocks[ri]}
 
-        while queue:
-            distance, position = queue.popleft()
-            for neighbor in tunnels[position]:
-                if neighbor in visited:
-                    continue
-                visited.add(neighbor)
-                if valves[neighbor]:
-                    dists[valve][neighbor] = distance + 1
-                queue.append((distance + 1, neighbor))
+    T = 1000000000000
 
-        del dists[valve][valve]
-        if valve != "AA":
-            del dists[valve]["AA"]
+    while rc < T:
+        for ji, jet in enumerate(jets):
+            moved = {x + jet for x in rock}
+            if all(0 <= x.real < 7 for x in moved) and not (moved & solid):
+                rock = moved
+            moved = {x - 1j for x in rock}
+            if moved & solid:
+                solid |= rock
+                rc += 1 
+                height = max(x.imag for x in solid) + 1
+                if rc >= T:
+                    break
+                ri = (ri + 1) % 5
+                rock = {x + 2 + (height + 3) * 1j for x in rocks[ri]}
+                key = (ji, ri, summarize())
+                if key in seen:
+                    lrc, lh = seen[key]
+                    rem = T - rc
+                    rep = rem // (rc - lrc)
+                    offset = rep * (height - lh)
+                    rc += rep * (rc - lrc)
+                    seen = {}
+                seen[key] = (rc, height)
+            else:
+                rock = moved
+                
 
-    indices = {}
-
-    for index, elements in enumerate(nonempty):
-        indices[elements] = index
-
-    cache = {}
-
-    def dfs(time, valve, bitmask):
-        if (time, valve, bitmask) in cache:
-            return cache[(time, valve, bitmask)]
-
-        maxval = 0
-        for neighbor in dists[valve]:
-            bit = 1 << indices[neighbor]
-            if bitmask & bit:
-                continue
-            remtime = time - dists[valve][neighbor] - 1
-            if remtime <= 0:
-                continue
-            maxval = max(maxval, dfs(remtime, neighbor, bitmask | bit) + valves[neighbor] * remtime)
-
-        cache[(time, valve, bitmask)] = maxval
-
-        return maxval
-
-    b = (1 << len(nonempty)) -1
-
-    m = 0
-
-    for i in range((b + 1) // 2):
-        m = max(m, dfs(26, "AA", i) + dfs(26, "AA", b ^ i))
-
-
-    return m
+    return int(height + offset)
 
 
 
@@ -93,18 +77,9 @@ def compute(s: str) -> int:
 
 
 INPUT_S = '''\
-Valve AA has flow rate=0; tunnels lead to valves DD, II, BB
-Valve BB has flow rate=13; tunnels lead to valves CC, AA
-Valve CC has flow rate=2; tunnels lead to valves DD, BB
-Valve DD has flow rate=20; tunnels lead to valves CC, AA, EE
-Valve EE has flow rate=3; tunnels lead to valves FF, DD
-Valve FF has flow rate=0; tunnels lead to valves EE, GG
-Valve GG has flow rate=0; tunnels lead to valves FF, HH
-Valve HH has flow rate=22; tunnel leads to valve GG
-Valve II has flow rate=0; tunnels lead to valves AA, JJ
-Valve JJ has flow rate=21; tunnel leads to valve II
+>>><<><>><<<>><>>><<<>>><<<><<<>><>><<>>
 '''
-EXPECTED = 1651
+EXPECTED = 3068
 
 
 @pytest.mark.parametrize(
