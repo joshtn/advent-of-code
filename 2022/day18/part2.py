@@ -4,72 +4,78 @@ import os.path
 import pytest
 
 ####
+from collections import deque
 
 
 INPUT_TXT = os.path.join(os.path.dirname(__file__), 'input.txt')
 
 
 def compute(s: str) -> int:
-    rocks = [
-        [0, 1, 2, 3],
-        [1, 1j, 1 + 1j, 2 + 1j, 1 + 2j],
-        [0, 1, 2, 2 + 1j, 2 + 2j],
-        [0, 1j, 2j, 3j],
-        [0, 1, 1j, 1 + 1j]
-    ]
+    
+    faces = {}
 
-    jets = [1 if x == ">" else -1 for x in s.strip()]
-    solid = {x - 1j for x in range(7)}
-    height = 0
+    offsets = [(0, 0, 0.5), (0, 0.5, 0), (0.5, 0, 0), (0, 0, -0.5), (0, -0.5, 0), (-0.5, 0, 0)]
 
-    seen = {}
+    mx = my = mz = float("inf")
+    Mx = My = Mz = -float("inf")
 
-    def summarize():
-        o = [-20] * 7
+    droplet = set()
 
-        for x in solid:
-            r = int(x.real)
-            i = int(x.imag)
-            o[r] = max(o[r], i)
 
-        top = max(o)
-        return tuple(x - top for x in o)
+    for line in s.splitlines():
+        x, y, z = cell = tuple(map(int, line.split(",")))
+        droplet.add(cell)
 
-    rc = 0
+        mx = min(mx, x)
+        my = min(my, y)
+        mz = min(mz, z)
 
-    ri = 0
-    rock = {x + 2 + (height + 3) * 1j for x in rocks[ri]}
+        Mx = max(Mx, x)
+        My = max(My, y)
+        Mz = max(Mz, z)
 
-    T = 1000000000000
 
-    while rc < T:
-        for ji, jet in enumerate(jets):
-            moved = {x + jet for x in rock}
-            if all(0 <= x.real < 7 for x in moved) and not (moved & solid):
-                rock = moved
-            moved = {x - 1j for x in rock}
-            if moved & solid:
-                solid |= rock
-                rc += 1 
-                height = max(x.imag for x in solid) + 1
-                if rc >= T:
-                    break
-                ri = (ri + 1) % 5
-                rock = {x + 2 + (height + 3) * 1j for x in rocks[ri]}
-                key = (ji, ri, summarize())
-                if key in seen:
-                    lrc, lh = seen[key]
-                    rem = T - rc
-                    rep = rem // (rc - lrc)
-                    offset = rep * (height - lh)
-                    rc += rep * (rc - lrc)
-                    seen = {}
-                seen[key] = (rc, height)
-            else:
-                rock = moved
-                
 
-    return int(height + offset)
+        for dx, dy, dz in offsets:
+            k = (x + dx, y + dy, z + dz)
+            if k not in faces:
+                faces[k] = 0 
+            faces[k] += 1
+
+    mx -= 1
+    my -= 1
+    mz -= 1
+
+    Mx += 1
+    My += 1
+    Mz += 1
+
+    q = deque([(mx, my, mz)])
+    air = {(mx, my, mz)}
+
+    while q:
+        x, y ,z = q.popleft()
+
+        for dx, dy, dz in offsets:
+            nx, ny, nz = k = (x + dx * 2, y + dy * 2, z + dz * 2)
+
+            if not (mx <= nx <= Mx and my <= ny <= My and mz <= nz <= Mz):
+                continue
+
+            if k in droplet or k in air:
+                continue
+
+            air.add(k)
+            q.append(k)
+
+    free = set()
+
+    for x, y, z in air:
+        for dx, dy, dz in offsets:
+            free.add((x + dx, y + dy, z + dz))
+
+
+    return len(set(faces) & free)
 
 
 
@@ -77,9 +83,21 @@ def compute(s: str) -> int:
 
 
 INPUT_S = '''\
->>><<><>><<<>><>>><<<>>><<<><<<>><>><<>>
+2,2,2
+1,2,2
+3,2,2
+2,1,2
+2,3,2
+2,2,1
+2,2,3
+2,2,4
+2,2,6
+1,2,5
+3,2,5
+2,1,5
+2,3,5
 '''
-EXPECTED = 3068
+EXPECTED = 64
 
 
 @pytest.mark.parametrize(
