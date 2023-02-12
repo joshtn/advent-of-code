@@ -4,78 +4,65 @@ import os.path
 import pytest
 
 ####
-from collections import deque
-
+import re
 
 INPUT_TXT = os.path.join(os.path.dirname(__file__), 'input.txt')
 
+def dfs(bp, maxspend, cache, time, bots, amt):
+    if time == 0:
+        return amt[3]
+
+    key = tuple([time, *bots, *amt])
+    if key in cache:
+        return cache[key]
+
+    maxval = amt[3] + bots[3] * time
+
+    for btype, recipe in enumerate(bp):
+        if btype != 3 and bots[btype] >= maxspend[btype]:
+            continue
+
+        wait = 0
+        for ramt, rtype in recipe:
+            if bots[rtype] == 0:
+                break
+
+            wait = max(wait,-(-(ramt - amt[rtype]) // bots[rtype])) #celling hacky way
+        else:
+            remtime = time - wait - 1
+            if remtime <= 0:
+                continue
+            bots_ = bots[:] # cloning array
+            amt_ = [x + y * (wait + 1) for x, y in zip(amt, bots)]
+            for ramt, rtype in recipe:
+                amt_[rtype] -= ramt
+            bots_[btype] += 1
+            for i in range(3):
+                amt_[i] = min(amt_[i], maxspend[i] * remtime)
+            maxval = max(maxval, dfs(bp, maxspend, cache, remtime, bots_, amt_))
+
+    cache[key] = maxval
+    return maxval
 
 def compute(s: str) -> int:
+
+    total = 1
     
-    faces = {}
+    for line in (list(s.splitlines())[:3]):
+        bp = []
+        maxspend = [0, 0, 0]
+        for section in line.split(": ")[1].split(". "):
+            recipe = []
+            for x, y in re.findall(r"(\d+) (\w+)", section):
+                x = int(x)
+                y = ["ore", "clay", "obsidian"].index(y)
+                recipe.append((x, y))
+                maxspend[y] = max(maxspend[y], x)
+            bp.append(recipe)
+        v = dfs(bp, maxspend, {}, 32, [1, 0, 0, 0], [0, 0, 0, 0])
+        total *= v
 
-    offsets = [(0, 0, 0.5), (0, 0.5, 0), (0.5, 0, 0), (0, 0, -0.5), (0, -0.5, 0), (-0.5, 0, 0)]
-
-    mx = my = mz = float("inf")
-    Mx = My = Mz = -float("inf")
-
-    droplet = set()
-
-
-    for line in s.splitlines():
-        x, y, z = cell = tuple(map(int, line.split(",")))
-        droplet.add(cell)
-
-        mx = min(mx, x)
-        my = min(my, y)
-        mz = min(mz, z)
-
-        Mx = max(Mx, x)
-        My = max(My, y)
-        Mz = max(Mz, z)
-
-
-
-        for dx, dy, dz in offsets:
-            k = (x + dx, y + dy, z + dz)
-            if k not in faces:
-                faces[k] = 0 
-            faces[k] += 1
-
-    mx -= 1
-    my -= 1
-    mz -= 1
-
-    Mx += 1
-    My += 1
-    Mz += 1
-
-    q = deque([(mx, my, mz)])
-    air = {(mx, my, mz)}
-
-    while q:
-        x, y ,z = q.popleft()
-
-        for dx, dy, dz in offsets:
-            nx, ny, nz = k = (x + dx * 2, y + dy * 2, z + dz * 2)
-
-            if not (mx <= nx <= Mx and my <= ny <= My and mz <= nz <= Mz):
-                continue
-
-            if k in droplet or k in air:
-                continue
-
-            air.add(k)
-            q.append(k)
-
-    free = set()
-
-    for x, y, z in air:
-        for dx, dy, dz in offsets:
-            free.add((x + dx, y + dy, z + dz))
-
-
-    return len(set(faces) & free)
+    return total
 
 
 
@@ -83,21 +70,10 @@ def compute(s: str) -> int:
 
 
 INPUT_S = '''\
-2,2,2
-1,2,2
-3,2,2
-2,1,2
-2,3,2
-2,2,1
-2,2,3
-2,2,4
-2,2,6
-1,2,5
-3,2,5
-2,1,5
-2,3,5
+Blueprint 1: Each ore robot costs 4 ore. Each clay robot costs 2 ore. Each obsidian robot costs 3 ore and 14 clay. Each geode robot costs 2 ore and 7 obsidian.
+Blueprint 2: Each ore robot costs 2 ore. Each clay robot costs 3 ore. Each obsidian robot costs 3 ore and 8 clay. Each geode robot costs 3 ore and 12 obsidian.
 '''
-EXPECTED = 64
+EXPECTED = 33
 
 
 @pytest.mark.parametrize(
