@@ -8,61 +8,63 @@ import re
 
 INPUT_TXT = os.path.join(os.path.dirname(__file__), 'input.txt')
 
-def dfs(bp, maxspend, cache, time, bots, amt):
-    if time == 0:
-        return amt[3]
-
-    key = tuple([time, *bots, *amt])
-    if key in cache:
-        return cache[key]
-
-    maxval = amt[3] + bots[3] * time
-
-    for btype, recipe in enumerate(bp):
-        if btype != 3 and bots[btype] >= maxspend[btype]:
-            continue
-
-        wait = 0
-        for ramt, rtype in recipe:
-            if bots[rtype] == 0:
-                break
-
-            wait = max(wait,-(-(ramt - amt[rtype]) // bots[rtype])) #celling hacky way
-        else:
-            remtime = time - wait - 1
-            if remtime <= 0:
-                continue
-            bots_ = bots[:] # cloning array
-            amt_ = [x + y * (wait + 1) for x, y in zip(amt, bots)]
-            for ramt, rtype in recipe:
-                amt_[rtype] -= ramt
-            bots_[btype] += 1
-            for i in range(3):
-                amt_[i] = min(amt_[i], maxspend[i] * remtime)
-            maxval = max(maxval, dfs(bp, maxspend, cache, remtime, bots_, amt_))
-
-    cache[key] = maxval
-    return maxval
 
 def compute(s: str) -> int:
 
-    total = 1
-    
-    for line in (list(s.splitlines())[:3]):
-        bp = []
-        maxspend = [0, 0, 0]
-        for section in line.split(": ")[1].split(". "):
-            recipe = []
-            for x, y in re.findall(r"(\d+) (\w+)", section):
-                x = int(x)
-                y = ["ore", "clay", "obsidian"].index(y)
-                recipe.append((x, y))
-                maxspend[y] = max(maxspend[y], x)
-            bp.append(recipe)
-        v = dfs(bp, maxspend, {}, 32, [1, 0, 0, 0], [0, 0, 0, 0])
-        total *= v
+    class Node:
+        def __init__(self, n):
+            self.n = n
+            self.left = None
+            self.right = None
 
-    return total
+
+    x = [Node(int(x) * 811589153) for x in s.splitlines()]
+
+    for i in range(len(x)):
+        x[i].right = x[(i + 1) % len(x)]
+        x[i].left = x[(i - 1) % len(x)]
+
+    m = len(x) - 1
+
+    for _ in range(10):
+        for c in x:
+            if c.n == 0:
+                z = c
+                continue
+            p = c
+            if c.n > 0:
+                for _ in range(c.n % m):
+                    p = p.right
+                if c == p:
+                    continue
+                c.right.left = c.left
+                c.left.right = c.right
+                p.right.left = c
+                c.right = p.right
+                p.right = c
+                c.left = p
+
+
+            else:
+                for _ in range(-c.n % m):
+                    p = p.left
+                if c == p:
+                    continue
+                c.left.right = c.right
+                c.right.left = c.left
+                p.left.right = c
+                c.left = p.left
+                p.left = c
+                c.right = p
+
+    t = 0
+
+    for _ in range(3):
+        for _ in range(1000):
+            z = z.right
+        t += z.n
+
+    return t
 
 
 
@@ -70,10 +72,15 @@ def compute(s: str) -> int:
 
 
 INPUT_S = '''\
-Blueprint 1: Each ore robot costs 4 ore. Each clay robot costs 2 ore. Each obsidian robot costs 3 ore and 14 clay. Each geode robot costs 2 ore and 7 obsidian.
-Blueprint 2: Each ore robot costs 2 ore. Each clay robot costs 3 ore. Each obsidian robot costs 3 ore and 8 clay. Each geode robot costs 3 ore and 12 obsidian.
+1
+2
+-3
+3
+-2
+0
+4
 '''
-EXPECTED = 33
+EXPECTED = 3
 
 
 @pytest.mark.parametrize(
