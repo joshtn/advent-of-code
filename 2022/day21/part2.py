@@ -4,67 +4,39 @@ import os.path
 import pytest
 
 ####
-import re
+import sympy
 
 INPUT_TXT = os.path.join(os.path.dirname(__file__), 'input.txt')
 
 
 def compute(s: str) -> int:
 
-    class Node:
-        def __init__(self, n):
-            self.n = n
-            self.left = None
-            self.right = None
+    monkeys = { "humn": sympy.Symbol("x")}
 
+    x = [line for line in s.splitlines()]
 
-    x = [Node(int(x) * 811589153) for x in s.splitlines()]
+    ops = {
+        "+": lambda x, y: x + y,
+        "-": lambda x, y: x - y,
+        "*": lambda x, y: x * y,
+        "/": lambda x, y: x / y,
+    }
 
-    for i in range(len(x)):
-        x[i].right = x[(i + 1) % len(x)]
-        x[i].left = x[(i - 1) % len(x)]
-
-    m = len(x) - 1
-
-    for _ in range(10):
-        for c in x:
-            if c.n == 0:
-                z = c
-                continue
-            p = c
-            if c.n > 0:
-                for _ in range(c.n % m):
-                    p = p.right
-                if c == p:
-                    continue
-                c.right.left = c.left
-                c.left.right = c.right
-                p.right.left = c
-                c.right = p.right
-                p.right = c
-                c.left = p
-
-
+    for a in x:
+        name, expr = a.split(": ")
+        if name in monkeys: continue
+        if expr.isdigit():
+            monkeys[name] = sympy.Integer(expr)
+        else:
+            left, op, right = expr.split()
+            if left in monkeys and right in monkeys:
+                if name == "root":
+                    print(sympy.solve(monkeys[left], monkeys[right])[0])
+                    break
+                monkeys[name] = ops[op](monkeys[left], monkeys[right])
             else:
-                for _ in range(-c.n % m):
-                    p = p.left
-                if c == p:
-                    continue
-                c.left.right = c.right
-                c.right.left = c.left
-                p.left.right = c
-                c.left = p.left
-                p.left = c
-                c.right = p
-
-    t = 0
-
-    for _ in range(3):
-        for _ in range(1000):
-            z = z.right
-        t += z.n
-
-    return t
+                x.append(a)
+    return 0
 
 
 
@@ -72,15 +44,23 @@ def compute(s: str) -> int:
 
 
 INPUT_S = '''\
-1
-2
--3
-3
--2
-0
-4
+root: pppw + sjmn
+dbpl: 5
+cczh: sllz + lgvd
+zczc: 2
+ptdq: humn - dvpt
+dvpt: 3
+lfqf: 4
+humn: 5
+ljgn: 2
+sjmn: drzm * dbpl
+sllz: 4
+pppw: cczh / lfqf
+lgvd: ljgn * ptdq
+drzm: hmdt - zczc
+hmdt: 32
 '''
-EXPECTED = 3
+EXPECTED = 152
 
 
 @pytest.mark.parametrize(
