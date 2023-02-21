@@ -4,27 +4,36 @@ import os.path
 import pytest
 
 ####
+import re
 
 INPUT_TXT = os.path.join(os.path.dirname(__file__), 'input.txt')
 
 
 def compute(s: str) -> int:
 
-    monkeys = {}
+    grid = []
+    done = False
 
-    x = [line for line in s.splitlines()]
-
-    for a in x:
-        name, expr = a.split(": ")
-        if expr.isdigit():
-            monkeys[name] = int(expr)
+    for line in s.splitlines():
+        line = line[:-1]
+        if line == "":
+            done = True
+        if done:
+            sequence = line
         else:
-            left, op, right = expr.split()
-            if left in monkeys and right in monkeys:
-                monkeys[name] = eval(f"{monkeys[left]} {op} {monkeys[right]}")
-            else:
-                x.append(a)
-    return monkeys["root"]
+            grid.append(line)
+
+    r = 0
+    c = 0
+
+    while grid[r][c] != ".":
+        c += 1   
+
+    for x, y in re.findall(r"(/d+)([RL]?)", sequence):
+        x = int(x)
+
+
+    return 0
 
 
 
@@ -32,23 +41,22 @@ def compute(s: str) -> int:
 
 
 INPUT_S = '''\
-root: pppw + sjmn
-dbpl: 5
-cczh: sllz + lgvd
-zczc: 2
-ptdq: humn - dvpt
-dvpt: 3
-lfqf: 4
-humn: 5
-ljgn: 2
-sjmn: drzm * dbpl
-sllz: 4
-pppw: cczh / lfqf
-lgvd: ljgn * ptdq
-drzm: hmdt - zczc
-hmdt: 32
+        ...#
+        .#..
+        #...
+        ....
+...#.......#
+........#...
+..#....#....
+..........#.
+        ...#....
+        .....#..
+        .#......
+        ......#.
+
+10R5L5R10L4R5L5
 '''
-EXPECTED = 152
+EXPECTED = 6032
 
 
 @pytest.mark.parametrize(
