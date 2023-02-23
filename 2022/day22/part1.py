@@ -14,7 +14,7 @@ def compute(s: str) -> int:
     grid = []
     done = False
 
-    for line in s.splitlines():
+    for line in s.splitlines(True):
         line = line[:-1]
         if line == "":
             done = True
@@ -32,9 +32,9 @@ def compute(s: str) -> int:
     dc = 1
 
     while grid[r][c] != ".":
-        c += 1   
+        c += 1
 
-    for x, y in re.findall(r"(/d+)([RL]?)", sequence):
+    for x, y in re.findall(r"(\d+)([RL]?)", sequence):
         x = int(x)
         for _ in range(x):
             nr = r
@@ -53,19 +53,16 @@ def compute(s: str) -> int:
         elif y == "L":
             dr, dc = -dc, dr
 
-
     if dr == 0:
         if dc == 1:
-            k = 0 
+            k = 0
         else:
             k = 2
     else:
         if dr == 1:
-            k = 1 
+            k = 1
         else:
             k = 3
-
-
 
     return (1000 * (r + 1) + 4 * (c + 1) + k)
 
