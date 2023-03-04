@@ -4,87 +4,76 @@ import os.path
 import pytest
 
 ####
+import math
+from collections import deque
 
 INPUT_TXT = os.path.join(os.path.dirname(__file__), 'input.txt')
 
 
 def compute(s: str) -> int:
-    elves = set()
+    
+    blizzards = tuple(set() for _ in range(4))
+    
+    for r, line in enumerate(s.splitlines()[1:]):
+        for c, item in enumerate(line[1:]):
+            if item in "<>^v":
+                blizzards["<>^v".find(item)].add((r, c))
 
-    for r, line in enumerate(s.splitlines()):
-        for c, item in enumerate(line):
-            if item == "#":
-                elves.add(c + r * 1j)
+    queue = deque([(0, -1, 0, 0)])
+    targets = [(r, c - 1), (-1, 0)]
+    seen = set()
 
-    scanmap = {
-        -1j: [-1j - 1, -1j, -1j + 1],
-        1j: [1j - 1, 1j, 1j + 1],
-        1: [1 - 1j, 1, 1 + 1j],
-        -1: [-1 - 1j, -1, -1 + 1j]
-    }
+    lcm = r * c // math.gcd(r, c)
 
-    moves = [-1j, 1j, -1, 1]
-    N = [-1 - 1j, -1j, -1j + 1, 1, 1 + 1j, 1j, 1j - 1, -1]
+    while queue:
+        time, cr, cc, stage = queue.popleft()
 
-    last = set(elves)
+        time += 1
 
-    iter = 1
-    while True:
-        once = set()
-        twice = set()
+        for dr, dc in ((0, 1), (0, -1), (-1, 0), (1, 0), (0, 0)):
+            nr = cr + dr
+            nc = cc + dc
 
-        for elf in elves:
-            if all(elf + x not in elves for x in N):
+            nstage = stage
+
+            if (nr, nc) == targets[stage % 2]:
+                if stage == 2:
+                    print(time)
+                    exit(0)
+                nstage += 1
+
+            if (nr < 0 or nc < 0 or nr >= r or nc >= c) and (nr, nc) not in targets:
                 continue
-            for move in moves:
-                if all(elf + x not in elves for x in scanmap[move]):
-                    prop = elf + move
-                    if prop in twice:
-                        pass
-                    elif prop in once:
-                        twice.add(prop)
-                    else:
-                        once.add(prop)
-                    break
 
-        ec = set(elves)
+            fail = False
 
-        for elf in ec:
-            if all(elf + x not in ec for x in N):
-                continue
-            for move in moves:
-                if all(elf + x not in ec for x in scanmap[move]):
-                    prop = elf + move
-                    if prop not in twice:
-                        elves.remove(elf)
-                        elves.add(prop)
-                    break
-        
-        moves.append(moves.pop(0))
+            if (nr, nc) not in targets:
+                for i, tr, tc in ((0, 0, -1), (1, 0, 1), (2, -1, 0), (3, 1, 0)):
+                    if ((nr - tr * time) % r, (nc - tc * time) % c) in blizzards[i]:
+                        fail = True
+                        break
 
-        if last == elves:
-            break
+            if not fail:
+                key = (nr, nc, nstage, time % lcm)
 
-        last = set(elves)
-        iter += 1
+                if key in seen:
+                    continue
 
-    return iter
+                seen.add(key)
+                queue.append((time, nr, nc, nstage))
 
-
-
-
+    return 0
 
 
 INPUT_S = '''\
-....#..
-..###.#
-#...#.#
-.#...##
-#.###..
-##.#.##
-.#..#..
+#.######
+#>>.<^<#
+#.<..<<#
+#>v.><>#
+#<^v^^>#
+######.#
 '''
-EXPECTED = 110
+EXPECTED = 18
 
 
 @pytest.mark.parametrize(
